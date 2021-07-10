@@ -1,0 +1,27 @@
+{
+    "name": "mirazmac/html-sanitizer",
+    "type": "library",
+    "description": "A lightweight library to make sanitizing HTML easier on PHP.",
+    "keywords": [],
+    "homepage": "https://mirazmac.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Miraz Mac",
+            "email": "mirazmac@gmail.com",
+            "homepage": "https://mirazmac.com",
+            "role": "Original Author"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MirazMac\\HtmlSanitizer\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9"
+    }
+}
