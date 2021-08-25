@@ -18,7 +18,7 @@ Now, ``HtmlSanitizer`` doesn't concern itself with validating, or fixing the HTM
 ### Install
 
 ```shell
-composer require mirazmac/html-sanitizer dev-master
+composer require mirazmac/html-sanitizer dev-main
 ```
 
 
