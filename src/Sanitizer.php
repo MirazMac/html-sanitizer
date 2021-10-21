@@ -42,9 +42,13 @@ class Sanitizer
     public function sanitize(string $html) : string
     {
         // Because..
-        libxml_disable_entity_loader(true);
         libxml_use_internal_errors(true);
         libxml_clear_errors(true);
+
+        // deprecated in PHP 8.0
+        if (version_compare(\PHP_VERSION, '8.0.0', '<')) {
+            libxml_disable_entity_loader(true);
+        }
 
         // Remove NULL characters (ignored by some browsers).
         $html = str_replace(chr(0), '', $html);

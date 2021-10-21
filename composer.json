@@ -22,7 +22,8 @@
         }
     },
     "scripts": {
-        "phpunit": "vendor/bin/phpunit"
+        "phpunit": "vendor/bin/phpunit",
+        "bench": "php ./bench/run.php"
     },
     "require-dev": {
         "phpunit/phpunit": "6"
