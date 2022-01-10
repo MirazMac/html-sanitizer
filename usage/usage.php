@@ -9,10 +9,11 @@ use MirazMac\HtmlSanitizer\Whitelist;
 require_once '../vendor/autoload.php';
 
 $whitelist = new BasicWhitelist;
-$htmlsanitizer = new Sanitizer($whitelist);
+$whitelist->setAllowedHosts('a', ['google.com']);
 
-//r($htmlsanitizer->getWhitelist());
+$htmlsanitizer = new Sanitizer($whitelist);
 
 $payload = file_get_contents('payload.txt');
 
-echo $htmlsanitizer->sanitize('<a href="#" download="true">Link</a>');
+
+echo $htmlsanitizer->sanitize($payload, true);

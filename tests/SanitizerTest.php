@@ -28,7 +28,7 @@ class SanitizerTest extends TestCase
      */
     public function testSimpleHTML() : void
     {
-        $string = $this->sanitizer->sanitize('<div id="fake"><h5 class="foo">Lorem ipsum</h5></div>');
+        $string = $this->sanitizer->sanitize('<script>alert("hello");</script><div id="fake"><h5 class="foo">Lorem ipsum</h5></div>');
         $this->assertEquals("Lorem ipsum", $string);
     }
 
@@ -39,6 +39,15 @@ class SanitizerTest extends TestCase
     public function testEmptyString() : void
     {
         $this->assertEmpty($this->sanitizer->sanitize(''));
+    }
+
+    /**
+     * Tests unicode strings remaining as is
+     */
+    public function testUnicodeString() : void
+    {
+        $string = $this->basicSanitizer->sanitize('<p>আমি বাংলায় গান গাই</p>');
+        $this->assertEquals('<p>আমি বাংলায় গান গাই</p>', $string);
     }
 
     /**
@@ -71,12 +80,22 @@ class SanitizerTest extends TestCase
         $this->assertEquals('<img src="1.png" data-src="1.png">', $string);
     }
 
+    /**
+     * Test allowed values for an attribute
+     */
+    public function testAllowedValues()
+    {
+        $string = $this->basicSanitizer->sanitize('<a href="#" title="four">hey</a>');
+        $this->assertEquals('<a href="#">hey</a>', $string);
+    }
+
     protected function getBasicWhitelist()
     {
         $whitelist = new BasicWhitelist;
         // Allow support for a few attribute for testing
         $whitelist->allowAttribute('img', ['data-src', 'data-lazyload'])
                   ->setAllowedHosts('img', ['google.com'])
+                  ->setAllowedValues('a', 'title', ['one', 'two', 'three'])
                   ->treatAttributesAsURL(['data-src'])
                   ->treatAttributesAsBoolean(['data-lazyload']);
         return $whitelist;

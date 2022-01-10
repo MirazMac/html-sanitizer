@@ -4,11 +4,30 @@ declare(strict_types=1);
 
 namespace MirazMac\HtmlSanitizer;
 
+use function \chr;
+use function \html_entity_decode;
+use function \htmlspecialchars;
+use function \libxml_clear_errors;
+use function \libxml_disable_entity_loader;
+use function \libxml_use_internal_errors;
+use function \mb_strlen;
+use function \mb_strpos;
+use function \mb_strtolower;
+use function \mb_substr;
+use function \parse_url;
+use function \preg_match;
+use function \range;
+use function \str_replace;
+use function \trim;
+use function \version_compare;
+
 /**
  * HtmlSanitizer
  *
- * A lightweight library to make sanitizing HTML easier on PHP. Has no dependencies except Native DomDocument support,
- * faster than any other sanization library present for PHP
+ * A lightweight library to make sanitizing HTML easier on PHP.
+ * Has no dependencies except native PHP extensions like dom, libxml, mbstring.
+ *
+ * Should be faster than any other sanization library present for PHP
  *
  * @author Miraz Mac <mirazmac@gmail.com>
  * @link https://mirazmac.com
@@ -37,17 +56,12 @@ class Sanitizer
      *
      * @param  string $html
      * @return string
-     * @throws \RuntimeException If failed to convert the HTML into UTF-8 via mb_convert_encoding()
+     * @throws \InvalidArgumentException If supplied HTML is not valid UTF-8
      */
     public function sanitize(string $html) : string
     {
-        // Because..
-        libxml_use_internal_errors(true);
-        libxml_clear_errors(true);
-
-        // deprecated in PHP 8.0
-        if (version_compare(\PHP_VERSION, '8.0.0', '<')) {
-            libxml_disable_entity_loader(true);
+        if (!$this->isValidUtf8($html)) {
+            throw new \InvalidArgumentException("Provided HTML must be valid utf-8");
         }
 
         // Remove NULL characters (ignored by some browsers).
@@ -57,41 +71,56 @@ class Sanitizer
             return '';
         }
 
+        // Because..
+        $previousState = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+
+        // deprecated in PHP 8.0
+        if (\PHP_VERSION_ID < 80000) {
+            libxml_disable_entity_loader(true);
+        }
+
         // Construct the DOM Document
         $dom = new \DOMDocument('1.0', 'UTF-8');
 
-        // Fix encoding issues
-        $html = @mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
-
-        if (empty($html)) {
-            throw new \RuntimeException("Failed to convert the HTML into UTF-8 via mb_convert_encoding();");
-        }
-
-        // Nah, we're not HTMLPurifier (fuck that bloated ass library btw)
+        // Nah
         $dom->strictErrorChecking = false;
         // nope
         $dom->validateOnParse = false;
         $dom->substituteEntities = false;
+        // Don't even try
         $dom->resolveExternals  = false;
         // whenever possible, please..
         $dom->recover = true;
-        // should this be a option to customize?
-        // idk
         $dom->formatOutput = false;
-        // same question
         $dom->preserveWhiteSpace  = false;
 
         // no shit sherlock
         $dom->encoding = 'UTF-8';
 
         // Finally load the HTML
-        $dom->loadHTML($html);
+        $dom->loadHTML(
+            // Prepend the utf-8 encoding tags
+            // ugly hack but works better than mb_convert_encoding()
+            '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta charset="UTF-8">'
+            .
+            $html,
+            \LIBXML_NOERROR | \LIBXML_NOWARNING | \LIBXML_HTML_NODEFDTD
+        );
 
         // Why again? Apparently it gets set to NULL after calling loadHTML(), so set it back to UTF-8 again,
         // otherwise saveHTML produces weird results
         $dom->encoding = 'UTF-8';
 
-        return trim($dom->saveHTML($this->doSanitize($dom)));
+        $html = trim($dom->saveHTML($this->doSanitize($dom)));
+
+        // Clear the errors
+        libxml_clear_errors();
+
+        // Restore the state
+        libxml_use_internal_errors($previousState);
+
+        return $html;
     }
 
     /**
@@ -140,6 +169,12 @@ class Sanitizer
                 continue; // no further action required, let's proceed to the next one
             }
 
+            // Remove attribute if value doesn't match with an explicitly defined list
+            if (!$this->whitelist->isValueAllowed($html->nodeName, $name, $value)) {
+                $html->removeAttribute($name);
+                continue;
+            }
+
             // Handle boolean/blank attributes
             if (HtmlDataMap::isBooleanAttribute($name) || $this->whitelist->isBooleanAttribute($name)) {
                 // If it's already empty or a valid boolean don't change anything
@@ -160,6 +195,7 @@ class Sanitizer
                     $value
                 );
             }
+
 
             // Regardless of all this, every attribute gets escaped
             $html->setAttribute(
@@ -214,7 +250,7 @@ class Sanitizer
      * @param  string $string
      * @return string
      */
-    protected function escapeAttribute(string $string) : string
+    public function escapeAttribute(string $string) : string
     {
         $string = html_entity_decode($string, ENT_QUOTES, 'UTF-8');
         return htmlspecialchars($string, ENT_QUOTES, 'UTF-8', true);
@@ -254,5 +290,17 @@ class Sanitizer
         } while ($before != $uri);
 
         return $uri;
+    }
+
+    /**
+     * Determines whether the specified string is valid utf 8.
+     *
+     * @param      string  $string   The string
+     *
+     * @return     bool
+     */
+    protected function isValidUtf8(string $string): bool
+    {
+        return '' === $string || 1 === preg_match('/^./us', $string);
     }
 }

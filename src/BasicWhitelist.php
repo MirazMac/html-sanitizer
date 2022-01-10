@@ -22,11 +22,21 @@ class BasicWhitelist extends Whitelist
         parent::setProtocols(static::getBasicProtocols());
     }
 
+    /**
+     * Returns the basic allowed protocols
+     *
+     * @return     array
+     */
     public static function getBasicProtocols() : array
     {
         return ['http', 'https', 'ftp', '//', 'mailto', 'data'];
     }
 
+    /**
+     * Gets the basic tags.
+     *
+     * @return     array
+     */
     public static function getBasicTags() : array
     {
         return [
@@ -271,6 +281,9 @@ class BasicWhitelist extends Whitelist
         'xml:lang'
         ],
         'sup' => [],
+        'source' => [
+            'src', 'type', 'sizes', 'srcset', 'media'
+        ],
         'table' => [
         'align',
         'bgcolor',

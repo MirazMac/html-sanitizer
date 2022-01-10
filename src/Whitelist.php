@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace MirazMac\HtmlSanitizer;
 
+use function \array_merge;
+use function \array_reverse;
+use function \explode;
+use function \in_array;
+use function \is_array;
+
 /**
  * Whitelist
  *
@@ -40,6 +46,13 @@ class Whitelist
      * @var array
      */
     protected $treatAsBoolean = [];
+
+    /**
+     * Allowed values for specific attributes
+     *
+     * @var        array
+     */
+    protected $values = [];
 
     /**
      * Internally required tags
@@ -137,6 +150,30 @@ class Whitelist
         foreach ((array) $attributes as $attr) {
             unset($this->tags[$tagName]['attributes'][$attr]);
         }
+
+        return $this;
+    }
+
+    /**
+     * Sets list of allowed values for an attribute under a tag name.
+     * If this is set and the value of the attribute doesn't match with these, the attribute will be removed.
+     * This mainly should be used for custom data attributes where you only want a specific set of values.
+     *
+     * @param      string           $tagName    The tag name
+     * @param      string           $attribute  The attribute
+     * @param      array            $values     The values
+     *
+     * @throws     \LogicException  If tag isn't allowed
+     *
+     * @return     self
+     */
+    public function setAllowedValues(string $tagName, string $attribute, array $values)
+    {
+        if (!$this->isTagAllowed($tagName)) {
+            throw new \LogicException("Failed to allow values on attribute `{$attribute}` on tag `{$tagName}`, because the tag itself isn't allowed.");
+        }
+
+        $this->values[$tagName][$attribute] = $values;
 
         return $this;
     }
@@ -422,6 +459,25 @@ class Whitelist
         }
 
         return false;
+    }
+
+    /**
+     * Determines if value is allowed for an attribute under.
+     *
+     * @param      string  $tagName    The tag name
+     * @param      string  $attribute  The attribute
+     * @param      string  $value      The value
+     *
+     * @return     bool
+     */
+    public function isValueAllowed(string $tagName, string $attribute, $value) : bool
+    {
+        // Allowed by default unless added explicitly
+        if (!isset($this->values[$tagName][$attribute])) {
+            return true;
+        }
+
+        return in_array($value, $this->values[$tagName][$attribute]);
     }
 
     /**
