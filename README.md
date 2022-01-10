@@ -25,19 +25,52 @@ composer require mirazmac/html-sanitizer dev-main
 ## Usage
 
 ```php
-use MirazMac\HtmlSanitizer\BasicWhitelist;
+use MirazMac\HtmlSanitizer\Whitelist;
 use MirazMac\HtmlSanitizer\Sanitizer;
 
 require_once '../vendor/autoload.php';
 
-// A basic pre-defined whitelist, you can off course customize, add, remove or create your own whitelist
-$whitelist = new BasicWhitelist;
+$whitelist = new Whitelist;
+
+// Allow the anchor tag with specific attributes
+$whitelist->allowTag('a', ['href', 'title', 'download', 'data-url', 'data-loaded']);
+
+// You can add multiple tags at once as well if that's what you prefer
+$whitelist->setTags(
+    [
+        // allows the `abbr` tag and it's title attribute
+        'abbr' =>  ['title'],
+        // allows only the em tag, any attributes would be stripped off
+        'em'   =>  [],
+    ],
+    true
+);
+
+// Set allowed hosts for the URL attributes on the `a` tag
+$whitelist->setAllowedHosts('a', ['google.com', 'facebook.com']);
+
+// Set the allowed protocols for this document
+$whitelist->setProtocols(['http', '//', 'https']);
+
+// Set a list of allowed values for an attribute's tag
+$whitelist->setAllowedValues('abbr', 'title', ['one', 'two', 'three']);
+
+// Set a list of custom attributes to be treated as URL (i.e to use the host & protocol filter)
+$whitelist->treatAttributesAsUrl(['data-url']);
+
+// Set a list of custom attributes to be treated as HTML Boolean (Not true/false ) (i.e their values would be set to blank or the name of the attribute itself)
+$whitelist->treatAttributesAsBoolean(['data-load']);
 
 // Create the sanitizer instance that uses this whitelist
 $htmlsanitizer = new Sanitizer($whitelist);
 
 // returns sanitized string
-$sanitizedHTML = $htmlsanitizer->sanitize('....HTML STRING...');
+$sanitizedHTML = $htmlsanitizer->sanitize('<a href="//google.com" data-download="">Google</a> <a href="https://bing.com" data-url="https://bing.com">My URL would be removed</a>');
+
+echo "HTML Source Output: <pre>";
+echo htmlspecialchars($sanitizedHTML);
+echo "</pre><br>Rendered Output:<br>" . $sanitizedHTML;
+
 
 ```
 

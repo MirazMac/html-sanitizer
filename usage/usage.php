@@ -9,7 +9,8 @@ use MirazMac\HtmlSanitizer\Whitelist;
 require_once '../vendor/autoload.php';
 
 $whitelist = new BasicWhitelist;
-$whitelist->setAllowedHosts('a', ['google.com']);
+$whitelist->setAllowedValues('a', 'href', ['#', '#2']);
+$whitelist->setAllowedValues('a', 'title', ['No more']);
 
 $htmlsanitizer = new Sanitizer($whitelist);
 
