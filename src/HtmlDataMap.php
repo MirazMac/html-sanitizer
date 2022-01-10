@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MirazMac\HtmlSanitizer;
 
+use function \in_array;
+
 /**
 * Stores basic data about HTML tags and attributes
 */
@@ -14,7 +16,7 @@ final class HtmlDataMap
      *
      * @var array
      */
-    protected static $booleanAttributes = [
+    const BOOLEAN_ATTRIBUTES = [
         'allowfullscreen', 'allowpaymentrequest', 'async', 'autofocus', 'autoplay',
         'checked', 'controls', 'default', 'disabled', 'formnovalidate', 'hidden',
         'ismap', 'itemscope', 'loop', 'multiple', 'muted', 'nomodule', 'novalidate',
@@ -27,7 +29,7 @@ final class HtmlDataMap
      *
      * @var array
      */
-    protected static $urlAttributes = [
+    const URL_ATTRIBUTES = [
         'href', 'background', 'cite', 'action', 'profile', 'longdesc', 'classid',
         'codebase', 'data', 'usemap', 'formaction', 'icon', 'src', 'manifest',
         'formaction', 'poster', 'srcset', 'archive'
@@ -38,7 +40,7 @@ final class HtmlDataMap
      *
      * @var array
      */
-    protected static $multiUrlAttributes = ['srcset'];
+    const MULTI_URL_ATTRIBUTES = ['srcset'];
 
     /**
      * If the HTML attribye is booolean type
@@ -48,7 +50,7 @@ final class HtmlDataMap
      */
     public static function isBooleanAttribute(string $attrName)
     {
-        return in_array($attrName, static::$booleanAttributes);
+        return in_array($attrName, static::BOOLEAN_ATTRIBUTES);
     }
 
     /**
@@ -59,6 +61,6 @@ final class HtmlDataMap
      */
     public static function isUrlAttribute(string $attrName)
     {
-        return in_array($attrName, static::$urlAttributes);
+        return in_array($attrName, static::URL_ATTRIBUTES);
     }
 }
